@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
 import { AnalysisRequest, AnalysisType } from '@/types';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const SYSTEM_PROMPT = `당신은 스타트업·IT 서비스 기업의 기획팀을 지원하는 전문 비즈니스 인사이트 분석가입니다.
 
@@ -167,8 +167,8 @@ ${buildSectionPrompts(req)}
 export async function POST(req: NextRequest) {
   const body: AnalysisRequest = await req.json();
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY가 설정되지 않았습니다.' }), {
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response(JSON.stringify({ error: 'OPENAI_API_KEY가 설정되지 않았습니다.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -182,17 +182,19 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 
       try {
-        const stream = anthropic.messages.stream({
-          model: 'claude-sonnet-4-6',
+        const stream = await openai.chat.completions.create({
+          model: 'gpt-4o',
           max_tokens: 10000,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: buildPrompt(body) }],
+          stream: true,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: buildPrompt(body) },
+          ],
         });
 
         for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-            send({ text: chunk.delta.text });
-          }
+          const text = chunk.choices[0]?.delta?.content ?? '';
+          if (text) send({ text });
         }
 
         send({ done: true });
