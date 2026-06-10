@@ -44,3 +44,11 @@
 /* 체크리스트 */
 .prose-custom li:has(input[type="checkbox"]) { @apply flex items-start gap-2; }
 .prose-custom input[type="checkbox"] { @apply mt-1 rounded; }
+
+/* PDF 인쇄 */
+@media print {
+  .no-print { display: none !important; }
+  @page { margin: 15mm; size: A4; }
+  body { background: white !important; }
+  nav { display: none !important; }
+}

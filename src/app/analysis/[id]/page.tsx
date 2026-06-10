@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Copy, Check, FileDown, Share2, AlertCircle } from 'lucide-react';
-import { exportPdf } from '@/lib/exportPdf';
 import { AnalysisContent } from '@/components/AnalysisContent';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
 import type { Analysis } from '@/types';
@@ -19,8 +18,6 @@ export default function AnalysisPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/analyses/${id}`)
@@ -46,15 +43,8 @@ export default function AnalysisPage() {
     setTimeout(() => setUrlCopied(false), 2000);
   };
 
-  const handleDownload = async () => {
-    if (!analysis || !pdfRef.current) return;
-    setExporting(true);
-    try {
-      const dateStr = new Date(analysis.created_at).toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '');
-      await exportPdf(pdfRef.current, `${analysis.service}_인사이트분석_${dateStr}.pdf`);
-    } finally {
-      setExporting(false);
-    }
+  const handleDownload = () => {
+    window.print();
   };
 
   if (loading) {
@@ -97,8 +87,8 @@ export default function AnalysisPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* 뒤로가기 + 액션 버튼 (PDF 캡처 제외) */}
-      <div className="flex items-center justify-between mb-6">
+      {/* 뒤로가기 + 액션 버튼 — 인쇄 시 숨김 */}
+      <div className="no-print flex items-center justify-between mb-6">
         <button
           onClick={() => router.push('/')}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
@@ -125,17 +115,16 @@ export default function AnalysisPage() {
           </button>
           <button
             onClick={handleDownload}
-            disabled={exporting}
-            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <FileDown className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{exporting ? '변환 중...' : 'PDF 저장'}</span>
+            <span className="hidden sm:inline">PDF 저장</span>
           </button>
         </div>
       </div>
 
-      {/* PDF 캡처 영역: 제목 + 내용 */}
-      <div ref={pdfRef}>
+      {/* 인쇄 영역: 제목 + 내용 */}
+      <div>
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
