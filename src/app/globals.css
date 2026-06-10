@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Noto Sans KR', sans-serif;
+  }
+}
+
+/* 스트리밍 커서 효과 */
+.streaming-cursor::after {
+  content: '▌';
+  animation: blink 1s step-end infinite;
+  color: #6366f1;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 마크다운 컨텐츠 스타일 */
+.prose-custom h1 { @apply text-2xl font-bold text-gray-900 mt-8 mb-4; }
+.prose-custom h2 { @apply text-xl font-bold text-gray-900 mt-10 mb-3 pb-2 border-b border-gray-100; }
+.prose-custom h3 { @apply text-base font-semibold text-gray-800 mt-6 mb-2; }
+.prose-custom h4 { @apply text-sm font-semibold text-gray-700 mt-4 mb-1; }
+.prose-custom p  { @apply text-gray-700 leading-relaxed mb-4; }
+.prose-custom ul { @apply mb-4 space-y-1; }
+.prose-custom ol { @apply mb-4 space-y-1 list-decimal list-inside; }
+.prose-custom li { @apply text-gray-700 leading-relaxed; }
+.prose-custom strong { @apply font-semibold text-gray-900; }
+.prose-custom em { @apply italic text-gray-600; }
+.prose-custom hr { @apply my-8 border-gray-200; }
+.prose-custom blockquote { @apply border-l-4 border-indigo-300 pl-4 my-4 text-gray-600 italic; }
+.prose-custom code { @apply bg-gray-100 text-indigo-700 px-1.5 py-0.5 rounded text-sm font-mono; }
+.prose-custom pre  { @apply bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 overflow-x-auto; }
+.prose-custom pre code { @apply bg-transparent text-gray-800 p-0; }
+
+/* 테이블 */
+.prose-custom table { @apply w-full border-collapse text-sm mb-6; }
+.prose-custom th { @apply bg-indigo-50 border border-gray-200 px-3 py-2 text-left font-semibold text-indigo-900 text-xs uppercase; }
+.prose-custom td { @apply border border-gray-200 px-3 py-2 text-gray-700; }
+.prose-custom tr:nth-child(even) td { @apply bg-gray-50/50; }
+
+/* 체크리스트 */
+.prose-custom li:has(input[type="checkbox"]) { @apply flex items-start gap-2; }
+.prose-custom input[type="checkbox"] { @apply mt-1 rounded; }
