@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
 import { AnalysisRequest, AnalysisType } from '@/types';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+export const dynamic = 'force-dynamic';
 
 const SYSTEM_PROMPT = `당신은 스타트업·IT 서비스 기업의 기획팀을 지원하는 전문 비즈니스 인사이트 분석가입니다.
 
@@ -174,6 +174,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const encoder = new TextEncoder();
 
   const readable = new ReadableStream({
