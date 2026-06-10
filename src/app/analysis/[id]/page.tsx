@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Copy, Check, Download, Share2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Copy, Check, FileDown, Share2, AlertCircle } from 'lucide-react';
+import { exportPdf } from '@/lib/exportPdf';
 import { AnalysisContent } from '@/components/AnalysisContent';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
 import type { Analysis } from '@/types';
@@ -18,6 +19,8 @@ export default function AnalysisPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/analyses/${id}`)
@@ -43,16 +46,15 @@ export default function AnalysisPage() {
     setTimeout(() => setUrlCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    if (!analysis) return;
-    const blob = new Blob([analysis.content], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const dateStr = new Date(analysis.created_at).toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '');
-    a.download = `${analysis.service}_인사이트분석_${dateStr}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (!analysis || !pdfRef.current) return;
+    setExporting(true);
+    try {
+      const dateStr = new Date(analysis.created_at).toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '');
+      await exportPdf(pdfRef.current, `${analysis.service}_인사이트분석_${dateStr}.pdf`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -95,66 +97,66 @@ export default function AnalysisPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* 헤더 */}
-      <div className="mb-6">
+      {/* 뒤로가기 + 액션 버튼 (PDF 캡처 제외) */}
+      <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => router.push('/')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           분석 목록
         </button>
 
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                {analysis.domain}
-              </span>
-              <span className="text-xs text-gray-400">{ago}</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900">{analysis.service} 분석 리포트</h1>
-            <p className="text-sm text-gray-500 mt-1">{analysis.purpose}</p>
-
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {analysis.types.map(t => (
-                <span key={t} className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {ANALYSIS_TYPE_LABELS[t].icon} {ANALYSIS_TYPE_LABELS[t].label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleShareUrl}
-              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-              title="URL 복사"
-            >
-              {urlCopied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{urlCopied ? '복사됨' : '공유'}</span>
-            </button>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{copied ? '복사됨' : '복사'}</span>
-            </button>
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">저장</span>
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleShareUrl}
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+            title="URL 복사"
+          >
+            {urlCopied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{urlCopied ? '복사됨' : '공유'}</span>
+          </button>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{copied ? '복사됨' : '복사'}</span>
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={exporting}
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{exporting ? '변환 중...' : 'PDF 저장'}</span>
+          </button>
         </div>
       </div>
 
-      {/* 분석 내용 */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8">
-        <AnalysisContent content={analysis.content} />
+      {/* PDF 캡처 영역: 제목 + 내용 */}
+      <div ref={pdfRef}>
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+              {analysis.domain}
+            </span>
+            <span className="text-xs text-gray-400">{ago}</span>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900">{analysis.service} 분석 리포트</h1>
+          <p className="text-sm text-gray-500 mt-1">{analysis.purpose}</p>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {analysis.types.map(t => (
+              <span key={t} className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                {ANALYSIS_TYPE_LABELS[t].icon} {ANALYSIS_TYPE_LABELS[t].label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8">
+          <AnalysisContent content={analysis.content} />
+        </div>
       </div>
     </div>
   );

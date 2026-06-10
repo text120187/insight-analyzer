@@ -4,11 +4,12 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Sparkles, ChevronDown, ChevronUp, AlertCircle,
-  TrendingUp, Users, Star, Newspaper, Download, Copy, Check
+  TrendingUp, Users, Star, Newspaper, FileDown, Copy, Check
 } from 'lucide-react';
 import { AnalysisContent } from '@/components/AnalysisContent';
 import type { AnalysisRequest, AnalysisType } from '@/types';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
+import { exportPdf } from '@/lib/exportPdf';
 
 type Phase = 'form' | 'analyzing' | 'done' | 'error';
 
@@ -46,7 +47,9 @@ export default function NewAnalysisPage() {
   const [content, setContent] = useState('');
   const [savedId, setSavedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState<AnalysisRequest>({
     service: '',
@@ -135,14 +138,15 @@ export default function NewAnalysisPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${form.service}_인사이트분석_${new Date().toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '')}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (!pdfRef.current) return;
+    setExporting(true);
+    try {
+      const dateStr = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '-').replace('.', '');
+      await exportPdf(pdfRef.current, `${form.service}_인사이트분석_${dateStr}.pdf`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -293,56 +297,58 @@ export default function NewAnalysisPage() {
       {/* 스트리밍 분석 결과 */}
       {(phase === 'analyzing' || phase === 'done') && (
         <div ref={resultRef}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{form.service} 분석 리포트</h1>
-              <p className="text-sm text-gray-500 mt-0.5">{form.domain} · {form.purpose}</p>
-            </div>
-            {phase === 'done' && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? '복사됨' : '복사'}
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  MD 저장
-                </button>
-              </div>
-            )}
-          </div>
-
-          {phase === 'analyzing' && !content && (
-            <div className="flex items-center gap-3 text-indigo-600 mb-6">
-              <div className="flex gap-1">
-                {[0, 1, 2].map(i => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 0.15}s` }}
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-medium">AI가 분석 중입니다...</span>
+          {/* 액션 버튼 (PDF 캡처 제외) */}
+          {phase === 'done' && (
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? '복사됨' : '복사'}
+              </button>
+              <button
+                onClick={handleDownload}
+                disabled={exporting}
+                className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                {exporting ? '변환 중...' : 'PDF 저장'}
+              </button>
             </div>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8">
-            <AnalysisContent content={content} streaming={phase === 'analyzing'} />
+          {/* PDF 캡처 영역: 제목 + 내용 */}
+          <div ref={pdfRef}>
+            <div className="mb-6">
+              <h1 className="text-xl font-bold text-gray-900">{form.service} 분석 리포트</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{form.domain} · {form.purpose}</p>
+            </div>
+
+            {phase === 'analyzing' && !content && (
+              <div className="flex items-center gap-3 text-indigo-600 mb-6">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map(i => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-medium">AI가 분석 중입니다...</span>
+              </div>
+            )}
+
+            <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8">
+              <AnalysisContent content={content} streaming={phase === 'analyzing'} />
+            </div>
           </div>
 
           {phase === 'done' && savedId && (
-            <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-800">분석 완료! 자동 저장되었습니다.</p>
-                <p className="text-xs text-green-600 mt-0.5 font-mono break-all">{window.location.href}</p>
-              </div>
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-sm font-medium text-green-800">분석 완료! 자동 저장되었습니다.</p>
+              <p className="text-xs text-green-600 mt-0.5 font-mono break-all">{window.location.href}</p>
             </div>
           )}
         </div>
