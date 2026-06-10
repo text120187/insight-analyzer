@@ -17,6 +17,10 @@ export default function HomePage() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
 
+  function handleDelete(id: string) {
+    setAnalyses(prev => prev.filter(a => a.id !== id));
+  }
+
   useEffect(() => {
     fetch('/api/analyses')
       .then(r => r.json())
@@ -98,7 +102,7 @@ export default function HomePage() {
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
             {analyses.map(a => (
-              <AnalysisCard key={a.id} analysis={a} />
+              <AnalysisCard key={a.id} analysis={a} onDelete={handleDelete} />
             ))}
           </div>
         )}
