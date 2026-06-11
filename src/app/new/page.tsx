@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Sparkles, ChevronDown, ChevronUp, AlertCircle,
@@ -51,7 +51,7 @@ const OPTIONAL_FIELDS: { key: keyof AnalysisRequest; type: AnalysisType; label: 
   },
 ];
 
-export default function NewAnalysisPage() {
+function NewAnalysisContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resultRef = useRef<HTMLDivElement>(null);
@@ -408,5 +408,13 @@ export default function NewAnalysisPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function NewAnalysisPage() {
+  return (
+    <Suspense>
+      <NewAnalysisContent />
+    </Suspense>
   );
 }
