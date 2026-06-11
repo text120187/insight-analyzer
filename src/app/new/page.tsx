@@ -61,6 +61,7 @@ function NewAnalysisContent() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [sources, setSources] = useState<import('@/types').TavilySource[]>([]);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
@@ -163,12 +164,15 @@ function NewAnalysisContent() {
               fullContent += data.text;
               setContent(fullContent);
             }
+            if (data.sources) {
+              setSources(data.sources);
+            }
             if (data.done) {
               // 분석 완료 후 Supabase에 저장
               const saveRes = await fetch('/api/analyses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, content: fullContent }),
+                body: JSON.stringify({ ...form, content: fullContent, sources }),
               });
               if (saveRes.ok) {
                 const saved = await saveRes.json();

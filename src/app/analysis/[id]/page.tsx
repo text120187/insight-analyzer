@@ -10,8 +10,10 @@ import { ScoreDashboard } from '@/components/ScoreDashboard';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
 import { exportPdf } from '@/lib/exportPdf';
 import { parseScores } from '@/lib/parseScores';
+import { SourcesPanel } from '@/components/SourcesPanel';
 import type { Analysis } from '@/types';
 import type { ScoreData } from '@/lib/parseScores';
+import type { TavilySource } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -21,6 +23,7 @@ export default function AnalysisPage() {
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [scores, setScores] = useState<ScoreData | null>(null);
+  const [sources, setSources] = useState<TavilySource[]>([]);
   const [cleanContent, setCleanContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,6 +42,7 @@ export default function AnalysisPage() {
         setAnalysis(data);
         const { scores: parsedScores, cleanContent: clean } = parseScores(data.content);
         setScores(parsedScores);
+        setSources((data as { sources?: TavilySource[] }).sources ?? []);
         setCleanContent(clean);
       })
       .catch(e => setError(e.message))
@@ -243,6 +247,7 @@ export default function AnalysisPage() {
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-6">상세 분석</h2>
           <AnalysisContent content={cleanContent || analysis.content} />
         </div>
+      <SourcesPanel sources={sources} />
       </div>
     </div>
   );

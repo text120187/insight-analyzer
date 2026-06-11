@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       purpose: body.purpose,
       types:   body.types,
       content: body.content,
+      sources: body.sources ?? [],
     })
     .select('id')
     .single();

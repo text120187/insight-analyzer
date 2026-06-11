@@ -1,17 +1,20 @@
 export interface Dimension {
   name: string;
   score: number;
+  reasoning: string;
 }
 
 export interface ScoreItem {
   name: string;
   score: number;
   description: string;
+  reasoning: string;
 }
 
 export interface ScoreData {
   overall_score: number;
   label: string;
+  overall_reasoning: string;
   dimensions: Dimension[];
   strengths: ScoreItem[];
   weaknesses: ScoreItem[];
