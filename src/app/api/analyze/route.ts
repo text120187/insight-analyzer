@@ -186,18 +186,18 @@ function buildPrompt(req: AnalysisRequest): string {
 |-----|-----|
 | 서비스/제품 | **${req.service}** |
 | 도메인/카테고리 | ${req.domain} |
-| 分析 목적 | ${req.purpose} |
-| 分析 유형 | ${req.types.map(t => typeLabels[t]).join(', ')} |
-| 分析 기준일 | ${today} |
+| 분석 목적 | ${req.purpose} |
+| 분석 유형 | ${req.types.map(t => typeLabels[t]).join(', ')} |
+| 분석 기준일 | ${today} |
 
 ---
 
 다음 구조에 따라 종합 기획 인사이트 리포트를 작성해 주세요.
 제공된 자료(뉴스·리뷰·연구)를 근거로 주장할 때 반드시 [출처 N] 형식으로 인용하세요.
 
-## 📋 分析 개요
+## 📋 분석 개요
 
-**${req.service}**의 현황과 分析 맥락을 2-3문장으로 요약하고, 이번 分析이 답해야 할 핵심 질문을 제시하세요.
+**${req.service}**의 현황과 분석 맥락을 2-3문장으로 요약하고, 이번 분석이 답해야 할 핵심 질문을 제시하세요.
 
 ---
 
@@ -206,7 +206,7 @@ ${buildSectionPrompts(req)}
 ## 5. 💡 종합 인사이트
 
 ### 핵심 발견사항 TOP 5
-전체 分析을 통해 도출한 가장 중요한 5가지 발견사항을 번호 매겨 제시하세요. 각 항목은 2-3문장으로 근거(출처 포함)를 설명하세요.
+전체 분석을 통해 도출한 가장 중요한 5가지 발견사항을 번호 매겨 제시하세요. 각 항목은 2-3문장으로 근거(출처 포함)를 설명하세요.
 
 ### 기회 매트릭스
 | 기회 | 시장 매력도 | 실행 가능성 | 우선순위 |
@@ -243,7 +243,7 @@ ${buildSectionPrompts(req)}
 
 ---
 
-*分析 기준일: ${today} · AI 분析 결과로 내부 검토 후 활용을 권장합니다.*
+*분석 기준일: ${today} · AI 분析 결과로 내부 검토 후 활용을 권장합니다.*
 
 ---
 
@@ -265,7 +265,7 @@ ${req.types.includes('self') ? `**[시스템 지시]** 위 분析이 완전히 �
     {"name": "<강점명 6자 이내>", "score": <60-100 정수>, "description": "<30자 이내 한 줄>", "reasoning": "<이 강점이 분析에서 확인된 구체적 근거 1문장>"}
   ],
   "weaknesses": [
-    {"name": "<약점명 6자 이내>", "score": <0-50 정수>, "description": "<30자 이내 한 줄>", "reasoning": "<이 약점이 分析에서 확인된 구체적 근거 1문장>"}
+    {"name": "<약점명 6자 이내>", "score": <0-50 정수>, "description": "<30자 이내 한 줄>", "reasoning": "<이 약점이 분석에서 확인된 구체적 근거 1문장>"}
   ],
   "opportunities": ["<기회1 20자 이내>", "<기회2>", "<기회3>"],
   "risks": ["<위험1 20자 이내>", "<위험2>"]
@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
           } catch {}
         }
 
-        send({ status: 'AI 分析 시작...' });
+        send({ status: 'AI 분석 시작...' });
 
         const stream = await openai.chat.completions.create({
           model: 'gpt-4o',
