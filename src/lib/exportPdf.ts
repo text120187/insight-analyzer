@@ -9,6 +9,7 @@ export async function exportPdf(element: HTMLElement, filename: string) {
     useCORS: true,
     logging: false,
     backgroundColor: '#ffffff',
+    foreignObjectRendering: true,
   });
 
   const imgData = canvas.toDataURL('image/jpeg', 0.95);
