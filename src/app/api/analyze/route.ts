@@ -247,11 +247,11 @@ ${buildSectionPrompts(req)}
 
 ---
 
-**[시스템 지시]** 위 分析이 완전히 끝난 직후, 아래 형식의 JSON 점수 블록을 **반드시** 정확히 이 형식 그대로 출력하세요. 분析 내용을 바탕으로 각 수치를 채워 넣으세요. 형식을 절대 바꾸지 마세요.
+${req.types.includes('self') ? `**[시스템 지시]** 위 분析이 완전히 끝난 직후, 아래 형식의 JSON 점수 블록을 **반드시** 정확히 이 형식 그대로 출력하세요. 자체 서비스 진단 결과를 바탕으로 각 수치를 채워 넣으세요. 형식을 절대 바꾸지 마세요.
 
 <!-- INSIGHT_SCORES
 {
-  "overall_score": <分析 결과를 종합한 0-100 정수>,
+  "overall_score": <자체 서비스 진단 결과를 종합한 0-100 정수>,
   "label": "<매우 낮음|낮음|보통|양호|우수|매우 우수 중 정확히 하나>",
   "overall_reasoning": "<종합 점수 산정 이유를 2문장 이내로>",
   "dimensions": [
@@ -270,7 +270,7 @@ ${buildSectionPrompts(req)}
   "opportunities": ["<기회1 20자 이내>", "<기회2>", "<기회3>"],
   "risks": ["<위험1 20자 이내>", "<위험2>"]
 }
--->`;
+-->` : ''}`;
 }
 
 export async function POST(req: NextRequest) {
