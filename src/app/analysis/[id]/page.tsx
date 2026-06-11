@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Copy, Check, FileDown, Share2, AlertCircle } from 'lucide-react';
 import { AnalysisContent } from '@/components/AnalysisContent';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
+import { exportPdf } from '@/lib/exportPdf';
 import type { Analysis } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -18,6 +19,7 @@ export default function AnalysisPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/analyses/${id}`)
@@ -43,8 +45,10 @@ export default function AnalysisPage() {
     setTimeout(() => setUrlCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    window.print();
+  const handleDownload = async () => {
+    if (!reportRef.current) return;
+    const filename = analysis ? `${analysis.service}_기획인사이트_분석리포트.pdf` : '기획인사이트_분석리포트.pdf';
+    await exportPdf(reportRef.current, filename);
   };
 
   if (loading) {
@@ -123,8 +127,8 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {/* 인쇄 영역: 제목 + 내용 */}
-      <div>
+      {/* PDF 추출 영역: 제목 + 내용 */}
+      <div ref={reportRef}>
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">

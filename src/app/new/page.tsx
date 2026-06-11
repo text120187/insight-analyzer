@@ -9,6 +9,7 @@ import {
 import { AnalysisContent } from '@/components/AnalysisContent';
 import type { AnalysisRequest, AnalysisType } from '@/types';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
+import { exportPdf } from '@/lib/exportPdf';
 
 type Phase = 'form' | 'analyzing' | 'done' | 'error';
 
@@ -135,8 +136,9 @@ export default function NewAnalysisPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    window.print();
+  const handleDownload = async () => {
+    if (!resultRef.current) return;
+    await exportPdf(resultRef.current, `기획인사이트_분석리포트.pdf`);
   };
 
   return (
