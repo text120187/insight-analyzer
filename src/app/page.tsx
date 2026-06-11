@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Sparkles, TrendingUp, Users, Star, Newspaper } from 'lucide-react';
+import { Plus, Sparkles, TrendingUp, Users, Star, Newspaper, ChevronRight } from 'lucide-react';
 import { AnalysisCard } from '@/components/AnalysisCard';
 import type { Analysis } from '@/types';
 
@@ -22,7 +22,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    fetch('/api/analyses')
+    fetch('/api/analyses?limit=6')
       .then(r => r.json())
       .then(data => Array.isArray(data) ? setAnalyses(data) : setAnalyses([]))
       .catch(() => setAnalyses([]))
@@ -71,7 +71,12 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-gray-900">최근 분석</h2>
           {analyses.length > 0 && (
-            <span className="text-sm text-gray-500">{analyses.length}개</span>
+            <Link
+              href="/history"
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+            >
+              전체 보기
+            </Link>
           )}
         </div>
 
@@ -100,11 +105,24 @@ export default function HomePage() {
             </Link>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {analyses.map(a => (
-              <AnalysisCard key={a.id} analysis={a} onDelete={handleDelete} />
-            ))}
-          </div>
+          <>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {analyses.map(a => (
+                <AnalysisCard key={a.id} analysis={a} onDelete={handleDelete} />
+              ))}
+            </div>
+
+            {/* 분석 히스토리 더보기 */}
+            <div className="mt-6 text-center">
+              <Link
+                href="/history"
+                className="inline-flex items-center gap-2 text-sm text-gray-600 border border-gray-200 bg-white px-5 py-2.5 rounded-xl hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+              >
+                <span>분석 히스토리 더보기</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </div>

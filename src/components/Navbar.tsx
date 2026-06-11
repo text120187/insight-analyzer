@@ -20,9 +20,9 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/"
+            href="/history"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              pathname === '/'
+              pathname === '/history'
                 ? 'bg-indigo-50 text-indigo-700 font-medium'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}

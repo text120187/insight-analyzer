@@ -8,15 +8,17 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const sb = getSupabase();
   if (!sb) return NextResponse.json([]);
+
+  const limit = Math.min(Number(req.nextUrl.searchParams.get('limit') ?? 100), 200);
 
   const { data, error } = await sb
     .from('analyses')
     .select('id, service, domain, purpose, types, created_at')
     .order('created_at', { ascending: false })
-    .limit(20);
+    .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
