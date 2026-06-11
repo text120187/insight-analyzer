@@ -3,7 +3,7 @@ import './globals.css';
 import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: '기획 인사이트 분석',
+  title: 'InsightOS',
   description: '트렌드·경쟁사·앱리뷰·뉴스를 AI로 종합 분석하여 기획 인사이트를 도출합니다.',
 };
 

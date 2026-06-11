@@ -14,7 +14,7 @@ export function Navbar() {
           <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
             <BarChart3 className="w-4 h-4 text-white" />
           </div>
-          <span className="hidden sm:block">기획 인사이트 분석</span>
+          <span className="hidden sm:block">InsightOS</span>
           <span className="sm:hidden">인사이트</span>
         </Link>
 
