@@ -167,7 +167,7 @@ export default function NewAnalysisPage() {
       {(phase === 'form' || phase === 'error') && (
         <div>
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">새 기획 인사이트 분석</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">무엇을 분석할까요?</h1>
             <p className="text-gray-500">분석하려는 서비스와 목적을 입력하면 AI가 종합 리포트를 작성합니다.</p>
           </div>
 
