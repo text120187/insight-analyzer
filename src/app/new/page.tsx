@@ -47,6 +47,7 @@ export default function NewAnalysisPage() {
   const [content, setContent] = useState('');
   const [savedId, setSavedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [form, setForm] = useState<AnalysisRequest>({
@@ -131,14 +132,33 @@ export default function NewAnalysisPage() {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = content;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = async () => {
-    if (!resultRef.current) return;
-    await exportPdf(resultRef.current, `기획인사이트_분석리포트.pdf`);
+    if (!resultRef.current || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      await exportPdf(resultRef.current, `기획인사이트_분석리포트.pdf`);
+    } catch (e) {
+      alert('PDF 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error(e);
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   return (
@@ -301,10 +321,11 @@ export default function NewAnalysisPage() {
               </button>
               <button
                 onClick={handleDownload}
-                className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={pdfLoading}
+                className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FileDown className="w-3.5 h-3.5" />
-                PDF 저장
+                <FileDown className={`w-3.5 h-3.5 ${pdfLoading ? 'animate-bounce' : ''}`} />
+                {pdfLoading ? '생성 중...' : 'PDF 저장'}
               </button>
             </div>
           )}

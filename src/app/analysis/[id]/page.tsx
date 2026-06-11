@@ -19,6 +19,7 @@ export default function AnalysisPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,21 +35,52 @@ export default function AnalysisPage() {
 
   const handleCopy = async () => {
     if (!analysis) return;
-    await navigator.clipboard.writeText(analysis.content);
+    try {
+      await navigator.clipboard.writeText(analysis.content);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = analysis.content;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleShareUrl = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = url;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
     setUrlCopied(true);
     setTimeout(() => setUrlCopied(false), 2000);
   };
 
   const handleDownload = async () => {
-    if (!reportRef.current) return;
-    const filename = analysis ? `${analysis.service}_기획인사이트_분석리포트.pdf` : '기획인사이트_분석리포트.pdf';
-    await exportPdf(reportRef.current, filename);
+    if (!reportRef.current || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const filename = analysis ? `${analysis.service}_기획인사이트_분석리포트.pdf` : '기획인사이트_분석리포트.pdf';
+      await exportPdf(reportRef.current, filename);
+    } catch (e) {
+      alert('PDF 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error(e);
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   if (loading) {
@@ -119,10 +151,11 @@ export default function AnalysisPage() {
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={pdfLoading}
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FileDown className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">PDF 저장</span>
+            <FileDown className={`w-3.5 h-3.5 ${pdfLoading ? 'animate-bounce' : ''}`} />
+            <span className="hidden sm:inline">{pdfLoading ? '생성 중...' : 'PDF 저장'}</span>
           </button>
         </div>
       </div>
