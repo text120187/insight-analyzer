@@ -1,4 +1,4 @@
-export type AnalysisType = 'trends' | 'competitors' | 'reviews' | 'news' | 'self' | 'research';
+export type AnalysisType = 'trends' | 'competitors' | 'reviews' | 'news' | 'self' | 'research' | 'ux';
 
 export interface AnalysisRequest {
   service: string;
@@ -10,6 +10,8 @@ export interface AnalysisRequest {
   news?: string;
   selfDescription?: string;
   researchData?: string;
+  uxUrl?: string;
+  uxImageBase64?: string;
 }
 
 export interface Analysis {
@@ -29,4 +31,5 @@ export const ANALYSIS_TYPE_LABELS: Record<AnalysisType, { label: string; icon: s
   news:        { label: '뉴스 분석',      icon: '📰', description: '뉴스·기사에서 산업 시사점 도출' },
   self:        { label: '자체 서비스 진단', icon: '🔍', description: '우리 서비스 강약점·개선 방향 분석' },
   research:    { label: '학술/연구 자료',  icon: '📚', description: '논문·리포트에서 근거 기반 인사이트 도출' },
+  ux:         { label: 'UI/UX 화면 분석',  icon: '🖥️', description: '화면 캡처·URL로 사용성 검증' },
 };

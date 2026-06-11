@@ -63,6 +63,8 @@ function NewAnalysisContent() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
+  const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
+  const [uxPreview, setUxPreview] = useState<string | null>(null);
 
   const [form, setForm] = useState<AnalysisRequest>({
     service: '',
@@ -74,6 +76,8 @@ function NewAnalysisContent() {
     news: '',
     selfDescription: '',
     researchData: '',
+    uxUrl: '',
+    uxImageBase64: '',
   });
 
   // 재분석 시 URL 파라미터로 폼 미리 채우기
@@ -92,6 +96,21 @@ function NewAnalysisContent() {
       types: types.length > 0 ? types : prev.types,
     }));
   }, [searchParams]);
+
+
+  const handleUxImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      // data:image/...;base64,<data> 에서 base64 부분만 추출
+      const base64 = result.split(',')[1];
+      setUxPreview(result);
+      setForm(prev => ({ ...prev, uxImageBase64: base64, uxUrl: '' }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const toggleType = (t: AnalysisType) => {
     setForm(prev => ({
@@ -334,6 +353,63 @@ function NewAnalysisContent() {
               </div>
             )}
 
+
+            {/* UI/UX 분석 전용 입력 */}
+            {form.types.includes('ux') && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+                <h2 className="font-semibold text-gray-900">분석할 화면 <span className="text-gray-400 text-xs font-normal">(선택)</span></h2>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setUxMode('upload'); setForm(p => ({ ...p, uxUrl: '' })); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${uxMode === 'upload' ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-indigo-200'}`}
+                  >
+                    📎 이미지 업로드
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setUxMode('url'); setUxPreview(null); setForm(p => ({ ...p, uxImageBase64: '' })); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${uxMode === 'url' ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-indigo-200'}`}
+                  >
+                    🔗 URL 입력
+                  </button>
+                </div>
+                {uxMode === 'upload' ? (
+                  <div>
+                    <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                      {uxPreview ? (
+                        <img src={uxPreview} alt="미리보기" className="max-h-48 rounded-lg object-contain mb-2" />
+                      ) : (
+                        <>
+                          <span className="text-2xl mb-2">🖼️</span>
+                          <span className="text-sm text-gray-500">PNG, JPG, GIF 파일을 클릭하거나 드래그하세요</span>
+                          <span className="text-xs text-gray-400 mt-1">최대 4MB 권장</span>
+                        </>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleUxImage} />
+                    </label>
+                    {uxPreview && (
+                      <button
+                        type="button"
+                        onClick={() => { setUxPreview(null); setForm(p => ({ ...p, uxImageBase64: '' })); }}
+                        className="mt-2 text-xs text-red-500 hover:underline"
+                      >
+                        이미지 제거
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="url"
+                    value={form.uxUrl ?? ''}
+                    onChange={e => setForm(p => ({ ...p, uxUrl: e.target.value }))}
+                    placeholder="https://example.com/screen"
+                    className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                )}
+                <p className="text-xs text-gray-400">비워두면 서비스명·도메인 기반으로 일반 UX 관점 분석을 진행합니다.</p>
+              </div>
+            )}
             <button
               type="submit"
               disabled={!form.service || !form.domain || !form.purpose || form.types.length === 0}

@@ -140,13 +140,40 @@ ${req.service}가 사용자에게 제공하는 핵심 가치와 현재 시장 �
 ---`);
   }
 
+
+  if (req.types.includes('ux')) {
+    const sectionNum = sections.length + 1;
+    const hasImage = !!(req.uxImageBase64 || req.uxUrl);
+    sections.push(`## ${sectionNum}. 🖥️ UI/UX 화면 분석
+
+${hasImage ? '첨부된 화면 이미지를 기반으로 아래 항목을 분석하세요.' : '(화면 이미지가 없으므로 서비스명과 도메인을 바탕으로 일반적인 UX 관점에서 분석합니다.)'}
+
+### 첫인상 & 비주얼 계층구조
+화면의 첫인상과 시각적 위계가 사용자 목적에 부합하는지 평가하세요.
+
+### 사용성 문제점 (Usability Issues)
+| 위치 | 문제 | 심각도 | 개선 방향 |
+|-----|-----|-------|---------|
+
+### 인지 부하 (Cognitive Load)
+사용자가 화면을 이해하기 위해 처리해야 하는 정보량이 적절한지 평가하세요.
+
+### UX 원칙 적용 검토
+Nielsen 10가지 사용성 원칙, Fitts 법칙, Gestalt 원칙 관점에서 평가하세요.
+
+### 개선 제안 TOP 5
+우선순위 순으로 구체적인 개선 방향을 제시하세요. 각 항목은 "어디를 → 어떻게 → 왜" 형식으로 작성하세요.
+
+---`);
+  }
+
   return sections.join('\n\n');
 }
 
 function buildPrompt(req: AnalysisRequest): string {
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
   const typeLabels: Record<AnalysisType, string> = {
-    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석', self: '자체 서비스 진단', research: '학술/연구 자료',
+    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석', self: '자체 서비스 진단', research: '학술/연구 자료', ux: 'UI/UX 화면 분석',
   };
 
   return `# 기획 인사이트 분석 요청
@@ -251,6 +278,19 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // URL → 스크린샷 (Microlink 무료 API)
+        let uxScreenshotUrl: string | null = null;
+        if (enriched.types.includes('ux') && enriched.uxUrl && !enriched.uxImageBase64) {
+          try {
+            send({ status: 'URL 화면 캡처 중...' });
+            const mlRes = await fetch(
+              `https://api.microlink.io/?url=${encodeURIComponent(enriched.uxUrl)}&screenshot=true&meta=false&embed=screenshot.url`
+            );
+            const mlJson = await mlRes.json();
+            uxScreenshotUrl = mlJson?.data?.screenshot?.url ?? null;
+          } catch {}
+        }
+
         send({ status: 'AI 분석 시작...' });
 
         const stream = await openai.chat.completions.create({
@@ -259,7 +299,27 @@ export async function POST(req: NextRequest) {
           stream: true,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildPrompt(enriched) },
+            {
+              role: 'user',
+              content: (() => {
+                const textPart = { type: 'text' as const, text: buildPrompt(enriched) };
+                if (enriched.types.includes('ux')) {
+                  if (enriched.uxImageBase64) {
+                    const mime = enriched.uxImageBase64.startsWith('/9j') ? 'image/jpeg' : 'image/png';
+                    return [
+                      { type: 'image_url' as const, image_url: { url: `data:${mime};base64,${enriched.uxImageBase64}`, detail: 'high' as const } },
+                      textPart,
+                    ];
+                  } else if (uxScreenshotUrl) {
+                    return [
+                      { type: 'image_url' as const, image_url: { url: uxScreenshotUrl, detail: 'high' as const } },
+                      textPart,
+                    ];
+                  }
+                }
+                return buildPrompt(enriched);
+              })(),
+            },
           ],
         });
 
