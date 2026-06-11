@@ -57,9 +57,37 @@ export async function searchResearch(service: string, domain: string, startId = 
 
 export async function searchReviews(service: string, startId = 1): Promise<SearchOutput> {
   const client = getClient();
-  const res = await client.search(`${service} 앱 리뷰 사용자 평가 장단점`, {
-    searchDepth: 'basic',
-    maxResults: 6,
-  });
-  return buildOutput(res.results, 'reviews', startId);
+
+  const [storeRes, painRes, blogRes] = await Promise.all([
+    // 앱스토어·플레이스토어 직접 타겟
+    client.search(`${service} app reviews rating`, {
+      searchDepth: 'advanced',
+      maxResults: 3,
+      includeDomains: ['apps.apple.com', 'play.google.com'],
+    }).catch(() => ({ results: [] as { title: string; content: string; url: string }[] })),
+
+    // 사용자 불만·개선 요청
+    client.search(`${service} 앱 불편한점 개선요청 사용자 후기`, {
+      searchDepth: 'advanced',
+      maxResults: 3,
+    }).catch(() => ({ results: [] as { title: string; content: string; url: string }[] })),
+
+    // 블로그·커뮤니티 사용 후기
+    client.search(`${service} 앱 사용 후기 장단점 솔직 리뷰`, {
+      searchDepth: 'basic',
+      maxResults: 3,
+    }).catch(() => ({ results: [] as { title: string; content: string; url: string }[] })),
+  ]);
+
+  // URL 중복 제거 후 최대 8개
+  const seen = new Set<string>();
+  const combined = [...storeRes.results, ...painRes.results, ...blogRes.results]
+    .filter(r => {
+      if (seen.has(r.url)) return false;
+      seen.add(r.url);
+      return true;
+    })
+    .slice(0, 8);
+
+  return buildOutput(combined, 'reviews', startId);
 }
