@@ -89,6 +89,10 @@ export async function exportPdf(
       backgroundColor: '#ffffff',
       width: 740,
       windowWidth: 740,
+      onclone: (clonedDoc) => {
+        // Tailwind v4의 oklch/lab 색상이 있는 스타일시트를 모두 제거
+        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(el => el.remove());
+      },
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
