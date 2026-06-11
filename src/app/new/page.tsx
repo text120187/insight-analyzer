@@ -61,6 +61,7 @@ export default function NewAnalysisPage() {
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
 
   const [form, setForm] = useState<AnalysisRequest>({
     service: '',
@@ -88,6 +89,7 @@ export default function NewAnalysisPage() {
 
     setPhase('analyzing');
     setContent('');
+    setStatusMessage('');
     let fullContent = '';
 
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -114,7 +116,9 @@ export default function NewAnalysisPage() {
           try {
             const data = JSON.parse(line.slice(6));
             if (data.error) throw new Error(data.error);
+            if (data.status) setStatusMessage(data.status);
             if (data.text) {
+              setStatusMessage('');
               fullContent += data.text;
               setContent(fullContent);
             }
@@ -362,7 +366,9 @@ export default function NewAnalysisPage() {
                     />
                   ))}
                 </div>
-                <span className="text-sm font-medium">AI가 분석 중입니다...</span>
+                <span className="text-sm font-medium">
+                  {statusMessage || 'AI가 분석 중입니다...'}
+                </span>
               </div>
             )}
 

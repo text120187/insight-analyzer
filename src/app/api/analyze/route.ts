@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
 import { AnalysisRequest, AnalysisType } from '@/types';
+import { searchNews, searchResearch, searchReviews } from '@/lib/tavily';
 
 export const dynamic = 'force-dynamic';
 
@@ -232,13 +233,33 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 
       try {
+        // Tavily 실시간 검색 — 입력값이 없을 때만 자동 수집
+        const enriched = { ...body };
+
+        if (process.env.TAVILY_API_KEY) {
+          if (enriched.types.includes('news') && !enriched.news?.trim()) {
+            send({ status: '최신 뉴스 검색 중...' });
+            enriched.news = await searchNews(enriched.service, enriched.domain);
+          }
+          if (enriched.types.includes('research') && !enriched.researchData?.trim()) {
+            send({ status: '학술/연구 자료 검색 중...' });
+            enriched.researchData = await searchResearch(enriched.service, enriched.domain);
+          }
+          if (enriched.types.includes('reviews') && !enriched.reviews?.trim()) {
+            send({ status: '앱 리뷰 검색 중...' });
+            enriched.reviews = await searchReviews(enriched.service);
+          }
+        }
+
+        send({ status: 'AI 분석 시작...' });
+
         const stream = await openai.chat.completions.create({
           model: 'gpt-4o',
           max_tokens: 10000,
           stream: true,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildPrompt(body) },
+            { role: 'user', content: buildPrompt(enriched) },
           ],
         });
 

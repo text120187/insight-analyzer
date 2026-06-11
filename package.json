@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.100.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
+    "@tavily/core": "^0.7.6",
     "date-fns": "^4.4.0",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.17.0",
