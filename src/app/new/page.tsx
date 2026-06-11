@@ -37,6 +37,12 @@ const OPTIONAL_FIELDS: { key: keyof AnalysisRequest; type: AnalysisType; label: 
     label: '뉴스 / 참고 자료',
     placeholder: '분석에 활용할 뉴스 기사나 리포트 내용을 붙여넣기하세요.',
   },
+  {
+    key: 'selfDescription',
+    type: 'self',
+    label: '서비스 현황 / 기능 설명',
+    placeholder: '현재 서비스 구성, 주요 기능, 알려진 문제점 등을 자유롭게 적어주세요.\n예: 현재 온보딩 이탈률이 높고, 결제 플로우가 3단계인데 이를 줄이고 싶습니다.',
+  },
 ];
 
 export default function NewAnalysisPage() {
@@ -58,6 +64,7 @@ export default function NewAnalysisPage() {
     competitors: '',
     reviews: '',
     news: '',
+    selfDescription: '',
   });
 
   const toggleType = (t: AnalysisType) => {

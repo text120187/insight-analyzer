@@ -1,4 +1,4 @@
-export type AnalysisType = 'trends' | 'competitors' | 'reviews' | 'news';
+export type AnalysisType = 'trends' | 'competitors' | 'reviews' | 'news' | 'self';
 
 export interface AnalysisRequest {
   service: string;
@@ -8,6 +8,7 @@ export interface AnalysisRequest {
   competitors?: string;
   reviews?: string;
   news?: string;
+  selfDescription?: string;
 }
 
 export interface Analysis {
@@ -25,4 +26,5 @@ export const ANALYSIS_TYPE_LABELS: Record<AnalysisType, { label: string; icon: s
   competitors: { label: '경쟁사 벤치마킹', icon: '🏆', description: '경쟁사 전략·강약점 분석' },
   reviews:     { label: '앱 리뷰 분석',   icon: '⭐', description: '리뷰 데이터에서 Pain Point 도출' },
   news:        { label: '뉴스 분석',      icon: '📰', description: '뉴스·기사에서 산업 시사점 도출' },
+  self:        { label: '자체 서비스 진단', icon: '🔍', description: '우리 서비스 강약점·개선 방향 분석' },
 };

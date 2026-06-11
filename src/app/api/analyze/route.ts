@@ -90,13 +90,39 @@ ${req.service}가 차별화할 수 있는 화이트스페이스를 명확히 제
 ---`);
   }
 
+  if (req.types.includes('self')) {
+    const selfData = req.selfDescription?.trim()
+      ? `\n아래 서비스 현황 및 설명을 참고하세요:\n\`\`\`\n${req.selfDescription}\n\`\`\``
+      : '\n(별도 서비스 정보가 없으므로 서비스명과 도메인을 바탕으로 분석합니다.)';
+    const sectionNum = sections.length + 1;
+    sections.push(`## ${sectionNum}. 🔍 자체 서비스 진단${selfData}
+
+### 서비스 핵심 가치 & 현재 포지셔닝
+${req.service}가 사용자에게 제공하는 핵심 가치와 현재 시장 내 포지션을 평가하세요.
+
+### 내부 강점 (Strengths)
+현재 잘 하고 있는 점을 구체적으로 3개 이상 제시하세요.
+
+### 내부 약점 & 개선 기회 (Weaknesses)
+| 약점 | 발생 원인 | 개선 방향 | 우선순위 |
+|-----|---------|---------|---------|
+
+### UX / 기능 진단
+사용자 경험 흐름상 마찰이 발생하거나 개선 여지가 있는 지점을 단계별로 분석하세요.
+
+### 성장 잠재력 & 미활용 자산
+현재 충분히 활용되지 않고 있는 기능, 데이터, 사용자 세그먼트 등을 짚어주세요.
+
+---`);
+  }
+
   return sections.join('\n\n');
 }
 
 function buildPrompt(req: AnalysisRequest): string {
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
   const typeLabels: Record<AnalysisType, string> = {
-    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석',
+    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석', self: '자체 서비스 진단',
   };
 
   return `# 기획 인사이트 분석 요청
