@@ -239,15 +239,15 @@ export async function POST(req: NextRequest) {
         if (process.env.TAVILY_API_KEY) {
           if (enriched.types.includes('news') && !enriched.news?.trim()) {
             send({ status: '최신 뉴스 검색 중...' });
-            enriched.news = await searchNews(enriched.service, enriched.domain);
+            try { enriched.news = await searchNews(enriched.service, enriched.domain); } catch {}
           }
           if (enriched.types.includes('research') && !enriched.researchData?.trim()) {
             send({ status: '학술/연구 자료 검색 중...' });
-            enriched.researchData = await searchResearch(enriched.service, enriched.domain);
+            try { enriched.researchData = await searchResearch(enriched.service, enriched.domain); } catch {}
           }
           if (enriched.types.includes('reviews') && !enriched.reviews?.trim()) {
             send({ status: '앱 리뷰 검색 중...' });
-            enriched.reviews = await searchReviews(enriched.service);
+            try { enriched.reviews = await searchReviews(enriched.service); } catch {}
           }
         }
 
