@@ -90,6 +90,29 @@ ${req.service}가 차별화할 수 있는 화이트스페이스를 명확히 제
 ---`);
   }
 
+  if (req.types.includes('research')) {
+    const researchData = req.researchData?.trim()
+      ? `\n아래 학술/연구 자료를 분석하세요:\n\`\`\`\n${req.researchData}\n\`\`\``
+      : '\n(자료가 없으므로 해당 도메인의 주요 학술 연구 동향을 바탕으로 분석합니다.)';
+    const sectionNum = sections.length + 1;
+    sections.push(`## ${sectionNum}. 📚 학술/연구 자료 분석${researchData}
+
+### 핵심 연구 발견사항
+주요 연구 결과를 요약하고, 각 발견사항이 ${req.service} 기획에 주는 시사점을 제시하세요.
+
+### 근거 기반 사용자 행동 인사이트
+연구에서 도출된 사용자 심리·행동 패턴 중 서비스 설계에 적용할 수 있는 것을 구체적으로 설명하세요.
+
+### 업계 적용 사례 & 벤치마크
+해당 연구 결과를 실제 서비스에 적용한 사례나 실험 결과를 제시하세요.
+
+### 기획에 바로 활용할 수 있는 시사점
+| 연구 근거 | 적용 아이디어 | 기대 효과 |
+|---------|------------|---------|
+
+---`);
+  }
+
   if (req.types.includes('self')) {
     const selfData = req.selfDescription?.trim()
       ? `\n아래 서비스 현황 및 설명을 참고하세요:\n\`\`\`\n${req.selfDescription}\n\`\`\``
@@ -122,7 +145,7 @@ ${req.service}가 사용자에게 제공하는 핵심 가치와 현재 시장 �
 function buildPrompt(req: AnalysisRequest): string {
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
   const typeLabels: Record<AnalysisType, string> = {
-    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석', self: '자체 서비스 진단',
+    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석', self: '자체 서비스 진단', research: '학술/연구 자료',
   };
 
   return `# 기획 인사이트 분석 요청
