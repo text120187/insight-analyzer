@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Copy, Check, FileDown, Share2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Copy, Check, FileDown, Share2, AlertCircle, RefreshCw } from 'lucide-react';
 import { AnalysisContent } from '@/components/AnalysisContent';
 import { ANALYSIS_TYPE_LABELS } from '@/types';
 import { exportPdf } from '@/lib/exportPdf';
@@ -67,6 +67,17 @@ export default function AnalysisPage() {
     }
     setUrlCopied(true);
     setTimeout(() => setUrlCopied(false), 2000);
+  };
+
+  const handleReanalyze = () => {
+    if (!analysis) return;
+    const params = new URLSearchParams({
+      service: analysis.service,
+      domain: analysis.domain,
+      purpose: analysis.purpose,
+      types: analysis.types.join(','),
+    });
+    router.push(`/new?${params.toString()}`);
   };
 
   const handleDownload = async () => {
@@ -135,6 +146,13 @@ export default function AnalysisPage() {
         </button>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleReanalyze}
+            className="flex items-center gap-1.5 text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>수정 후 재분석</span>
+          </button>
           <button
             onClick={handleShareUrl}
             className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"

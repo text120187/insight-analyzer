@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Sparkles, ChevronDown, ChevronUp, AlertCircle,
   TrendingUp, Users, Star, Newspaper, FileDown, Copy, Check
@@ -53,6 +53,7 @@ const OPTIONAL_FIELDS: { key: keyof AnalysisRequest; type: AnalysisType; label: 
 
 export default function NewAnalysisPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const resultRef = useRef<HTMLDivElement>(null);
 
   const [phase, setPhase] = useState<Phase>('form');
@@ -74,6 +75,23 @@ export default function NewAnalysisPage() {
     selfDescription: '',
     researchData: '',
   });
+
+  // 재분석 시 URL 파라미터로 폼 미리 채우기
+  useEffect(() => {
+    const service = searchParams.get('service');
+    const domain = searchParams.get('domain');
+    const purpose = searchParams.get('purpose');
+    const typesRaw = searchParams.get('types');
+    if (!service) return;
+    const types = (typesRaw?.split(',').filter(Boolean) ?? []) as AnalysisType[];
+    setForm(prev => ({
+      ...prev,
+      service: service ?? prev.service,
+      domain: domain ?? prev.domain,
+      purpose: purpose ?? prev.purpose,
+      types: types.length > 0 ? types : prev.types,
+    }));
+  }, [searchParams]);
 
   const toggleType = (t: AnalysisType) => {
     setForm(prev => ({
