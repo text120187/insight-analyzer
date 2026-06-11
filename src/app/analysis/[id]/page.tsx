@@ -74,7 +74,7 @@ export default function AnalysisPage() {
     setPdfLoading(true);
     try {
       const filename = analysis ? `${analysis.service}_기획인사이트_분석리포트.pdf` : '기획인사이트_분석리포트.pdf';
-      await exportPdf(reportRef.current, filename);
+      await exportPdf(reportRef.current, filename, analysis?.content ?? '');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       alert(`PDF 오류: ${msg}`);

@@ -152,7 +152,7 @@ export default function NewAnalysisPage() {
     if (!resultRef.current || pdfLoading) return;
     setPdfLoading(true);
     try {
-      await exportPdf(resultRef.current, `기획인사이트_분석리포트.pdf`);
+      await exportPdf(resultRef.current, `기획인사이트_분석리포트.pdf`, content);
     } catch (e) {
       alert('PDF 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
       console.error(e);
