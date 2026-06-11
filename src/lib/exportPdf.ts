@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf';
-
 type LineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'body' | 'bullet' | 'hr' | 'blank';
 
 interface DocLine {
