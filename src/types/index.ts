@@ -5,6 +5,7 @@ export interface TavilySource {
   title: string;
   url: string;
   snippet: string;
+  content?: string;
   type: 'news' | 'research' | 'reviews';
 }
 

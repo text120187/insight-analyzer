@@ -24,6 +24,7 @@ function buildOutput(
     title: r.title,
     url: r.url,
     snippet: r.content.slice(0, 200),
+    content: r.content,
     type,
   }));
 

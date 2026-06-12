@@ -12,6 +12,14 @@ const TYPE_LABEL: Record<TavilySource['type'], { label: string; color: string }>
 
 export function SourcesPanel({ sources }: { sources: TavilySource[] }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (id: number) =>
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   if (!sources || sources.length === 0) return null;
 
@@ -64,11 +72,21 @@ export function SourcesPanel({ sources }: { sources: TavilySource[] }) {
                     </a>
                   </div>
 
-                  {/* 요약 */}
+                  {/* 요약 + 펼치기 */}
                   {src.snippet && (
-                    <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1.5">
-                      {src.snippet}
-                    </p>
+                    <div className="mb-1.5">
+                      <p className={`text-xs text-gray-500 leading-relaxed ${expanded.has(src.id) ? '' : 'line-clamp-2'}`}>
+                        {expanded.has(src.id) && src.content ? src.content : src.snippet}
+                      </p>
+                      {src.content && src.content.length > 200 && (
+                        <button
+                          onClick={() => toggleExpand(src.id)}
+                          className="text-xs text-indigo-500 hover:text-indigo-700 mt-0.5"
+                        >
+                          {expanded.has(src.id) ? '접기 ▲' : '더 보기 ▼'}
+                        </button>
+                      )}
+                    </div>
                   )}
 
                   {/* URL */}
