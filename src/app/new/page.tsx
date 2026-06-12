@@ -62,6 +62,7 @@ function NewAnalysisContent() {
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [sources, setSources] = useState<import('@/types').TavilySource[]>([]);
+  const sourcesRef = useRef<import('@/types').TavilySource[]>([]);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
@@ -165,6 +166,7 @@ function NewAnalysisContent() {
               setContent(fullContent);
             }
             if (data.sources) {
+              sourcesRef.current = data.sources;
               setSources(data.sources);
             }
             if (data.done) {
@@ -172,7 +174,7 @@ function NewAnalysisContent() {
               const saveRes = await fetch('/api/analyses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, content: fullContent, sources }),
+                body: JSON.stringify({ ...form, content: fullContent, sources: sourcesRef.current }),
               });
               if (saveRes.ok) {
                 const saved = await saveRes.json();
