@@ -86,6 +86,11 @@ function NewAnalysisContent() {
     appReviewData:    { status: 'idle', label: '' },
     vocData:          { status: 'idle', label: '' },
   });
+  const [urlValues, setUrlValues] = useState<Record<string, string>>({
+    customerResearch: '',
+    appReviewData:    '',
+    vocData:          '',
+  });
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
@@ -512,27 +517,22 @@ function NewAnalysisContent() {
                             />
                           </label>
                           {/* URL 입력 */}
-                          {(() => {
-                            const [urlVal, setUrlVal] = useState('');
-                            return (
-                              <div className="flex gap-1 flex-1">
-                                <input
-                                  type="url"
-                                  value={urlVal}
-                                  onChange={e => setUrlVal(e.target.value)}
-                                  placeholder="또는 URL 입력"
-                                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => parseUrl(key, urlVal)}
-                                  className="px-3 py-2 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 shrink-0"
-                                >
-                                  가져오기
-                                </button>
-                              </div>
-                            );
-                          })()}
+                          <div className="flex gap-1 flex-1">
+                            <input
+                              type="url"
+                              value={urlValues[key]}
+                              onChange={e => setUrlValues(p => ({ ...p, [key]: e.target.value }))}
+                              placeholder="또는 URL 입력"
+                              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => parseUrl(key, urlValues[key])}
+                              className="px-3 py-2 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 shrink-0"
+                            >
+                              가져오기
+                            </button>
+                          </div>
                         </div>
                         {/* 추출된 텍스트 미리보기 */}
                         {(form[key] as string | undefined) && (
