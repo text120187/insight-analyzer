@@ -18,13 +18,26 @@ const DOMAIN_EXAMPLES = [
   '여행/모빌리티', '음식배달', '부동산', '콘텐츠/미디어', '게임', '소셜/커뮤니티',
 ];
 
+const DOMAIN_COMPETITORS: Record<string, string[]> = {
+  '커머스':           ['쿠팡', '네이버쇼핑', '11번가', 'G마켓', '무신사'],
+  '피트니스/헬스케어': ['나이키 런닝클럽', '카카오헬스', '삼성헬스', '눔', '다이어트신'],
+  '금융/핀테크':       ['토스', '카카오페이', '네이버페이', '뱅크샐러드', '삼성페이'],
+  '교육/에듀테크':     ['클래스101', '패스트캠퍼스', '유데미', '뤼이드', '산타토익'],
+  '여행/모빌리티':     ['야놀자', '여기어때', '카카오T', '쏘카', '에어비앤비'],
+  '음식배달':          ['배달의민족', '요기요', '쿠팡이츠', '땡겨요', '위메프오'],
+  '부동산':            ['직방', '다방', '호갱노노', '네이버부동산', '아실'],
+  '콘텐츠/미디어':     ['유튜브', '넷플릭스', '왓챠', '틱톡', '네이버웹툰'],
+  '게임':              ['배틀그라운드', '리그오브레전드', '메이플스토리', '로블록스', '원신'],
+  '소셜/커뮤니티':     ['인스타그램', '트위터/X', '카카오스토리', '네이버밴드', '디스코드'],
+};
+
+function getCompetitorSuggestions(domain: string): string[] {
+  if (DOMAIN_COMPETITORS[domain]) return DOMAIN_COMPETITORS[domain];
+  const key = Object.keys(DOMAIN_COMPETITORS).find(k => domain.includes(k) || k.includes(domain));
+  return key ? DOMAIN_COMPETITORS[key] : [];
+}
+
 const OPTIONAL_FIELDS: { key: keyof AnalysisRequest; type: AnalysisType; label: string; placeholder: string }[] = [
-  {
-    key: 'competitors',
-    type: 'competitors',
-    label: '경쟁사 목록',
-    placeholder: '예: 카카오페이, 토스, 네이버페이 (쉼표로 구분)',
-  },
   {
     key: 'reviews',
     type: 'reviews',
@@ -63,6 +76,8 @@ function NewAnalysisContent() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [sources, setSources] = useState<import('@/types').TavilySource[]>([]);
   const sourcesRef = useRef<import('@/types').TavilySource[]>([]);
+  const [selectedChips, setSelectedChips] = useState<string[]>([]);
+  const [customCompetitorText, setCustomCompetitorText] = useState('');
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
@@ -339,6 +354,65 @@ function NewAnalysisContent() {
                 })}
               </div>
             </div>
+
+            {/* 경쟁사 벤치마킹 전용 입력 */}
+            {form.types.includes('competitors') && (() => {
+              const suggestions = getCompetitorSuggestions(form.domain);
+              const buildCompetitors = (chips: string[], custom: string) => {
+                const extras = custom.split(',').map(s => s.trim()).filter(s => s && !chips.includes(s));
+                return [...chips, ...extras].join(', ');
+              };
+              const toggleChip = (name: string) => {
+                const next = selectedChips.includes(name)
+                  ? selectedChips.filter(c => c !== name)
+                  : [...selectedChips, name];
+                setSelectedChips(next);
+                setForm(p => ({ ...p, competitors: buildCompetitors(next, customCompetitorText) }));
+              };
+              const handleCustomChange = (val: string) => {
+                setCustomCompetitorText(val);
+                setForm(p => ({ ...p, competitors: buildCompetitors(selectedChips, val) }));
+              };
+              return (
+                <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+                  <h2 className="font-semibold text-gray-900">경쟁사 목록 <span className="text-gray-400 text-xs font-normal">(선택)</span></h2>
+                  {suggestions.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2">{form.domain} 대표 서비스 — 클릭해서 선택</p>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.map(name => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => toggleChip(name)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                              selectedChips.includes(name)
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'
+                            }`}
+                          >
+                            {selectedChips.includes(name) ? '✓ ' : ''}{name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1.5">그 외 경쟁사 직접 입력 <span className="text-gray-400">(쉼표로 구분)</span></label>
+                    <input
+                      type="text"
+                      value={customCompetitorText}
+                      onChange={e => handleCustomChange(e.target.value)}
+                      placeholder="예: 당근마켓, 번개장터"
+                      className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  {form.competitors && (
+                    <p className="text-xs text-gray-400">분석 대상: <span className="text-gray-600">{form.competitors}</span></p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* 선택 입력 (체크된 유형에 따라 표시) */}
             {OPTIONAL_FIELDS.filter(f => form.types.includes(f.type)).length > 0 && (
