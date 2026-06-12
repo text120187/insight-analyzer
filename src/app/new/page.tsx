@@ -79,6 +79,13 @@ function NewAnalysisContent() {
   const sourcesRef = useRef<import('@/types').TavilySource[]>([]);
   const [selectedChips, setSelectedChips] = useState<string[]>([]);
   const [customCompetitorText, setCustomCompetitorText] = useState('');
+
+  type UploadStatus = { status: 'idle' | 'loading' | 'done' | 'error'; label: string };
+  const [uploadStatus, setUploadStatus] = useState<Record<string, UploadStatus>>({
+    customerResearch: { status: 'idle', label: '' },
+    appReviewData:    { status: 'idle', label: '' },
+    vocData:          { status: 'idle', label: '' },
+  });
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
@@ -136,6 +143,39 @@ function NewAnalysisContent() {
       types: prev.types.includes(t) ? prev.types.filter(x => x !== t) : [...prev.types, t],
     }));
   };
+
+  async function parseFile(fieldKey: string, file: File) {
+    setUploadStatus(p => ({ ...p, [fieldKey]: { status: 'loading', label: `${file.name} 파싱 중...` } }));
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/parse-file', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? '파싱 실패');
+      setForm(p => ({ ...p, [fieldKey]: data.text }));
+      setUploadStatus(p => ({ ...p, [fieldKey]: { status: 'done', label: `${file.name} (${data.text.length.toLocaleString()}자 추출)` } }));
+    } catch (e) {
+      setUploadStatus(p => ({ ...p, [fieldKey]: { status: 'error', label: String(e) } }));
+    }
+  }
+
+  async function parseUrl(fieldKey: string, url: string) {
+    if (!url.trim()) return;
+    setUploadStatus(p => ({ ...p, [fieldKey]: { status: 'loading', label: 'URL 내용 가져오는 중...' } }));
+    try {
+      const res = await fetch('/api/parse-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? '가져오기 실패');
+      setForm(p => ({ ...p, [fieldKey]: data.text }));
+      setUploadStatus(p => ({ ...p, [fieldKey]: { status: 'done', label: `URL 내용 (${data.text.length.toLocaleString()}자 추출)` } }));
+    } catch (e) {
+      setUploadStatus(p => ({ ...p, [fieldKey]: { status: 'error', label: String(e) } }));
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,6 +473,94 @@ function NewAnalysisContent() {
                 ))}
               </div>
             )}
+
+            {/* 고객 데이터 업로드 */}
+            {(() => {
+              const UPLOAD_FIELDS: { key: 'customerResearch' | 'appReviewData' | 'vocData'; label: string; icon: string }[] = [
+                { key: 'customerResearch', label: '고객조사 자료', icon: '🔍' },
+                { key: 'appReviewData',    label: '앱 리뷰 자료',  icon: '⭐' },
+                { key: 'vocData',          label: 'VOC 자료',      icon: '💬' },
+              ];
+              return (
+                <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+                  <div>
+                    <h2 className="font-semibold text-gray-900">고객 데이터 업로드 <span className="text-gray-400 text-xs font-normal">(선택)</span></h2>
+                    <p className="text-xs text-gray-400 mt-0.5">엑셀·워드 파일 또는 URL로 자료를 추가하면 분석에 반영됩니다</p>
+                  </div>
+                  {UPLOAD_FIELDS.map(({ key, label, icon }) => {
+                    const st = uploadStatus[key];
+                    return (
+                      <div key={key} className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">{icon} {label}</label>
+                        <div className="flex gap-2">
+                          {/* 파일 업로드 버튼 */}
+                          <label className="flex-1 cursor-pointer">
+                            <div className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                              st.status === 'done' ? 'border-green-400 bg-green-50 text-green-700' :
+                              st.status === 'error' ? 'border-red-300 bg-red-50 text-red-600' :
+                              st.status === 'loading' ? 'border-indigo-300 bg-indigo-50 text-indigo-600' :
+                              'border-gray-300 bg-gray-50 text-gray-600 hover:border-indigo-300'
+                            }`}>
+                              <span>{st.status === 'loading' ? '⏳' : st.status === 'done' ? '✅' : st.status === 'error' ? '❌' : '📎'}</span>
+                              <span className="truncate text-xs">{st.label || '파일 선택 (xlsx, docx, csv)'}</span>
+                            </div>
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept=".xlsx,.xls,.docx,.txt,.csv"
+                              onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(key, f); e.target.value = ''; }}
+                            />
+                          </label>
+                          {/* URL 입력 */}
+                          {(() => {
+                            const [urlVal, setUrlVal] = useState('');
+                            return (
+                              <div className="flex gap-1 flex-1">
+                                <input
+                                  type="url"
+                                  value={urlVal}
+                                  onChange={e => setUrlVal(e.target.value)}
+                                  placeholder="또는 URL 입력"
+                                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => parseUrl(key, urlVal)}
+                                  className="px-3 py-2 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 shrink-0"
+                                >
+                                  가져오기
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        {/* 추출된 텍스트 미리보기 */}
+                        {(form[key] as string | undefined) && (
+                          <div className="relative">
+                            <textarea
+                              readOnly
+                              value={(form[key] as string).slice(0, 300) + ((form[key] as string).length > 300 ? '\n...(이하 생략)' : '')}
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-500 bg-gray-50 resize-none"
+                              rows={3}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm(p => ({ ...p, [key]: '' }));
+                                setUploadStatus(p => ({ ...p, [key]: { status: 'idle', label: '' } }));
+                              }}
+                              className="absolute top-1.5 right-2 text-xs text-red-400 hover:text-red-600"
+                            >
+                              ✕ 제거
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
 
             {/* UI/UX 분석 전용 입력 */}

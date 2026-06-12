@@ -177,7 +177,7 @@ Nielsen 10가지 사용성 원칙, Fitts 법칙, Gestalt 원칙 관점에서 평
 function buildPrompt(req: AnalysisRequest): string {
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
   const typeLabels: Record<AnalysisType, string> = {
-    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '앱 리뷰', news: '뉴스 분석', self: '자체 서비스 진단', research: '학술/연구 자료', ux: 'UI/UX 화면 분석',
+    trends: '시장 트렌드', competitors: '경쟁사 벤치마킹', reviews: '리뷰 분析', news: '뉴스 분석', self: '자체 서비스 진단', research: '학술/연구 자료', ux: 'UI/UX 화면 분석',
   };
 
   return `# 기획 인사이트 분석 요청
@@ -191,6 +191,24 @@ function buildPrompt(req: AnalysisRequest): string {
 | 분석 기준일 | ${today} |
 
 ---
+
+${(req.customerResearch || req.appReviewData || req.vocData) ? `## 📋 업로드된 고객 데이터
+아래 자료를 분析 전반에 걸쳐 적극 활용하고, 인용 시 [고객자료] 형식으로 표기하세요.
+
+${req.customerResearch?.trim() ? `**[고객조사 자료]**
+\`\`\`
+${req.customerResearch}
+\`\`\`` : ''}
+${req.appReviewData?.trim() ? `**[앱 리뷰 자료]**
+\`\`\`
+${req.appReviewData}
+\`\`\`` : ''}
+${req.vocData?.trim() ? `**[VOC 자료]**
+\`\`\`
+${req.vocData}
+\`\`\`` : ''}
+
+---` : ''}
 
 다음 구조에 따라 종합 기획 인사이트 리포트를 작성해 주세요.
 제공된 자료(뉴스·리뷰·연구)를 근거로 주장할 때 반드시 [출처 N] 형식으로 인용하세요.
