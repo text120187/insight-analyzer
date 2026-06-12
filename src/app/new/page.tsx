@@ -650,6 +650,12 @@ function NewAnalysisContent() {
                           placeholder={`https://example.com/screen${idx + 1}`}
                           className="flex-1 border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setUxUrlList(p => [...p, ''])}
+                          className="shrink-0 w-8 h-9 flex items-center justify-center rounded-lg border border-indigo-300 text-indigo-500 hover:bg-indigo-50 hover:border-indigo-400 transition-colors text-lg font-bold"
+                          title="URL 추가"
+                        >+</button>
                         {uxUrlList.length > 1 && (
                           <button
                             type="button"
@@ -658,18 +664,11 @@ function NewAnalysisContent() {
                               setUxUrlList(next);
                               setForm(p => ({ ...p, uxUrls: next.filter(Boolean) }));
                             }}
-                            className="text-red-400 hover:text-red-600 text-lg leading-none"
+                            className="shrink-0 w-8 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:border-red-300 transition-colors"
                           >✕</button>
                         )}
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => setUxUrlList(p => [...p, ''])}
-                      className="text-sm text-indigo-500 hover:text-indigo-700 font-medium"
-                    >
-                      + URL 추가
-                    </button>
                   </div>
                 )}
                 <p className="text-xs text-gray-400">비워두면 서비스명·도메인 기반으로 일반 UX 관점 분석을 진행합니다.</p>
