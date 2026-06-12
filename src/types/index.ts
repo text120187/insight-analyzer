@@ -21,6 +21,7 @@ export interface AnalysisRequest {
   researchData?: string;
   uxUrl?: string;
   uxImageBase64?: string;
+  uxImages?: string[];
   customerResearch?: string;
   appReviewData?: string;
   vocData?: string;

@@ -94,7 +94,7 @@ function NewAnalysisContent() {
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
-  const [uxPreview, setUxPreview] = useState<string | null>(null);
+  const [uxImageList, setUxImageList] = useState<{ base64: string; preview: string; name: string }[]>([]);
 
   const [form, setForm] = useState<AnalysisRequest>({
     service: '',
@@ -128,18 +128,31 @@ function NewAnalysisContent() {
   }, [searchParams]);
 
 
-  const handleUxImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      // data:image/...;base64,<data> 에서 base64 부분만 추출
-      const base64 = result.split(',')[1];
-      setUxPreview(result);
-      setForm(prev => ({ ...prev, uxImageBase64: base64, uxUrl: '' }));
-    };
-    reader.readAsDataURL(file);
+  const handleUxImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const base64 = dataUrl.split(',')[1];
+        setUxImageList(prev => {
+          const next = [...prev, { base64, preview: dataUrl, name: file.name }];
+          setForm(p => ({ ...p, uxImages: next.map(img => img.base64), uxImageBase64: '', uxUrl: '' }));
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removeUxImage = (idx: number) => {
+    setUxImageList(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      setForm(p => ({ ...p, uxImages: next.map(img => img.base64) }));
+      return next;
+    });
   };
 
   const toggleType = (t: AnalysisType) => {
@@ -577,34 +590,47 @@ function NewAnalysisContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setUxMode('url'); setUxPreview(null); setForm(p => ({ ...p, uxImageBase64: '' })); }}
+                    onClick={() => { setUxMode('url'); setUxImageList([]); setForm(p => ({ ...p, uxImageBase64: '', uxImages: [] })); }}
                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${uxMode === 'url' ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-indigo-200'}`}
                   >
                     🔗 URL 입력
                   </button>
                 </div>
                 {uxMode === 'upload' ? (
-                  <div>
-                    <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
-                      {uxPreview ? (
-                        <img src={uxPreview} alt="미리보기" className="max-h-48 rounded-lg object-contain mb-2" />
-                      ) : (
-                        <>
-                          <span className="text-2xl mb-2">🖼️</span>
-                          <span className="text-sm text-gray-500">PNG, JPG, GIF 파일을 클릭하거나 드래그하세요</span>
-                          <span className="text-xs text-gray-400 mt-1">최대 4MB 권장</span>
-                        </>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={handleUxImage} />
+                  <div className="space-y-3">
+                    {/* 업로드 영역 */}
+                    <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-5 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                      <span className="text-2xl mb-1">🖼️</span>
+                      <span className="text-sm text-gray-500 font-medium">화면 이미지를 클릭하거나 드래그</span>
+                      <span className="text-xs text-gray-400 mt-0.5">여러 장 동시 선택 가능 · 업로드 순서 = 화면 순서</span>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleUxImages} />
                     </label>
-                    {uxPreview && (
-                      <button
-                        type="button"
-                        onClick={() => { setUxPreview(null); setForm(p => ({ ...p, uxImageBase64: '' })); }}
-                        className="mt-2 text-xs text-red-500 hover:underline"
-                      >
-                        이미지 제거
-                      </button>
+
+                    {/* 썸네일 그리드 */}
+                    {uxImageList.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-500 font-medium">{uxImageList.length}장 등록됨 — AI가 순서대로 플로우를 분析합니다</span>
+                          <button type="button" onClick={() => { setUxImageList([]); setForm(p => ({ ...p, uxImages: [] })); }} className="text-xs text-red-400 hover:text-red-600">전체 제거</button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {uxImageList.map((img, idx) => (
+                            <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                              <img src={img.preview} alt={`화면 ${idx + 1}`} className="w-full h-24 object-cover" />
+                              <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold shadow">
+                                {idx + 1}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeUxImage(idx)}
+                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs items-center justify-center hidden group-hover:flex shadow"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 ) : (

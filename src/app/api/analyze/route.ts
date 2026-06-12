@@ -147,10 +147,15 @@ ${req.service}가 사용자에게 제공하는 핵심 가치와 현재 시장 �
 
   if (req.types.includes('ux')) {
     const sectionNum = sections.length + 1;
-    const hasImage = !!(req.uxImageBase64 || req.uxUrl);
-    sections.push(`## ${sectionNum}. 🖥️ UI/UX 화면 분석
+    const imgCount = req.uxImages?.length ?? (req.uxImageBase64 ? 1 : 0);
+    const hasImage = imgCount > 0 || !!req.uxUrl;
+    const imageInstruction = imgCount > 1
+      ? `첨부된 ${imgCount}장의 화면을 순서대로 분析하세요. 각 화면을 '화면 1', '화면 2' 등으로 구분하고, 화면 간 전환 흐름과 사용자 여정 전체를 중심으로 분析하세요.`
+      : hasImage ? '첨부된 화면 이미지를 기반으로 아래 항목을 분析하세요.'
+      : '(화면 이미지가 없으므로 서비스명과 도메인을 바탕으로 일반적인 UX 관점에서 분析합니다.)';
+    sections.push(`## ${sectionNum}. 🖥️ UI/UX 화면 분析
 
-${hasImage ? '첨부된 화면 이미지를 기반으로 아래 항목을 분석하세요.' : '(화면 이미지가 없으므로 서비스명과 도메인을 바탕으로 일반적인 UX 관점에서 분석합니다.)'}
+${imageInstruction}
 
 ### 첫인상 & 비주얼 계층구조
 화면의 첫인상과 시각적 위계가 사용자 목적에 부합하는지 평가하세요.
@@ -370,13 +375,24 @@ export async function POST(req: NextRequest) {
               content: (() => {
                 const textPart = { type: 'text' as const, text: buildPrompt(enriched) };
                 if (enriched.types.includes('ux')) {
+                  // 다중 이미지 (배열)
+                  if (enriched.uxImages && enriched.uxImages.length > 0) {
+                    const imageParts = enriched.uxImages.map(b64 => {
+                      const mime = b64.startsWith('/9j') ? 'image/jpeg' : 'image/png';
+                      return { type: 'image_url' as const, image_url: { url: `data:${mime};base64,${b64}`, detail: 'high' as const } };
+                    });
+                    return [...imageParts, textPart];
+                  }
+                  // 단일 이미지 (레거시)
                   if (enriched.uxImageBase64) {
                     const mime = enriched.uxImageBase64.startsWith('/9j') ? 'image/jpeg' : 'image/png';
                     return [
                       { type: 'image_url' as const, image_url: { url: `data:${mime};base64,${enriched.uxImageBase64}`, detail: 'high' as const } },
                       textPart,
                     ];
-                  } else if (uxScreenshotUrl) {
+                  }
+                  // URL 스크린샷
+                  if (uxScreenshotUrl) {
                     return [
                       { type: 'image_url' as const, image_url: { url: uxScreenshotUrl, detail: 'high' as const } },
                       textPart,
