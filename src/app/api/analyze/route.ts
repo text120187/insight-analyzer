@@ -349,17 +349,24 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // URL → 스크린샷 (Microlink 무료 API)
-        let uxScreenshotUrl: string | null = null;
-        if (enriched.types.includes('ux') && enriched.uxUrl && !enriched.uxImageBase64) {
-          try {
-            send({ status: 'URL 화면 캡처 중...' });
-            const mlRes = await fetch(
-              `https://api.microlink.io/?url=${encodeURIComponent(enriched.uxUrl)}&screenshot=true&meta=false&embed=screenshot.url`
-            );
-            const mlJson = await mlRes.json();
-            uxScreenshotUrl = mlJson?.data?.screenshot?.url ?? null;
-          } catch {}
+        // URL → 스크린샷 (Microlink 무료 API, 다중 URL 병렬 처리)
+        let uxScreenshotUrls: string[] = [];
+        if (enriched.types.includes('ux')) {
+          const urls = enriched.uxUrls?.filter(Boolean) ?? (enriched.uxUrl ? [enriched.uxUrl] : []);
+          if (urls.length > 0) {
+            send({ status: `URL 화면 캡처 중... (${urls.length}개)` });
+            uxScreenshotUrls = (await Promise.all(
+              urls.map(async url => {
+                try {
+                  const res = await fetch(
+                    `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`
+                  );
+                  const json = await res.json();
+                  return json?.data?.screenshot?.url as string | null ?? null;
+                } catch { return null; }
+              })
+            )).filter((u): u is string => !!u);
+          }
         }
 
         send({ status: 'AI 분석 시작...' });
@@ -391,12 +398,10 @@ export async function POST(req: NextRequest) {
                       textPart,
                     ];
                   }
-                  // URL 스크린샷
-                  if (uxScreenshotUrl) {
-                    return [
-                      { type: 'image_url' as const, image_url: { url: uxScreenshotUrl, detail: 'high' as const } },
-                      textPart,
-                    ];
+                  // URL 스크린샷 (다중)
+                  if (uxScreenshotUrls.length > 0) {
+                    const urlParts = uxScreenshotUrls.map(u => ({ type: 'image_url' as const, image_url: { url: u, detail: 'high' as const } }));
+                    return [...urlParts, textPart];
                   }
                 }
                 return buildPrompt(enriched);

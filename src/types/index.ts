@@ -20,6 +20,7 @@ export interface AnalysisRequest {
   selfDescription?: string;
   researchData?: string;
   uxUrl?: string;
+  uxUrls?: string[];
   uxImageBase64?: string;
   uxImages?: string[];
   customerResearch?: string;

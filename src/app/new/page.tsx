@@ -95,6 +95,7 @@ function NewAnalysisContent() {
   const [statusMessage, setStatusMessage] = useState('');
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
   const [uxImageList, setUxImageList] = useState<{ base64: string; preview: string; name: string }[]>([]);
+  const [uxUrlList, setUxUrlList] = useState<string[]>(['']);
 
   const [form, setForm] = useState<AnalysisRequest>({
     service: '',
@@ -583,14 +584,14 @@ function NewAnalysisContent() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => { setUxMode('upload'); setForm(p => ({ ...p, uxUrl: '' })); }}
+                    onClick={() => { setUxMode('upload'); setUxUrlList(['']); setForm(p => ({ ...p, uxUrl: '', uxUrls: [] })); }}
                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${uxMode === 'upload' ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-indigo-200'}`}
                   >
                     📎 이미지 업로드
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setUxMode('url'); setUxImageList([]); setForm(p => ({ ...p, uxImageBase64: '', uxImages: [] })); }}
+                    onClick={() => { setUxMode('url'); setUxImageList([]); setForm(p => ({ ...p, uxImageBase64: '', uxImages: [], uxUrls: [] })); }}
                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${uxMode === 'url' ? 'bg-indigo-50 border-indigo-400 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-indigo-200'}`}
                   >
                     🔗 URL 입력
@@ -634,13 +635,42 @@ function NewAnalysisContent() {
                     )}
                   </div>
                 ) : (
-                  <input
-                    type="url"
-                    value={form.uxUrl ?? ''}
-                    onChange={e => setForm(p => ({ ...p, uxUrl: e.target.value }))}
-                    placeholder="https://example.com/screen"
-                    className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
+                  <div className="space-y-2">
+                    {uxUrlList.map((url, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">{idx + 1}</span>
+                        <input
+                          type="url"
+                          value={url}
+                          onChange={e => {
+                            const next = uxUrlList.map((u, i) => i === idx ? e.target.value : u);
+                            setUxUrlList(next);
+                            setForm(p => ({ ...p, uxUrls: next.filter(Boolean) }));
+                          }}
+                          placeholder={`https://example.com/screen${idx + 1}`}
+                          className="flex-1 border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        />
+                        {uxUrlList.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = uxUrlList.filter((_, i) => i !== idx);
+                              setUxUrlList(next);
+                              setForm(p => ({ ...p, uxUrls: next.filter(Boolean) }));
+                            }}
+                            className="text-red-400 hover:text-red-600 text-lg leading-none"
+                          >✕</button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setUxUrlList(p => [...p, ''])}
+                      className="text-sm text-indigo-500 hover:text-indigo-700 font-medium"
+                    >
+                      + URL 추가
+                    </button>
+                  </div>
                 )}
                 <p className="text-xs text-gray-400">비워두면 서비스명·도메인 기반으로 일반 UX 관점 분석을 진행합니다.</p>
               </div>
