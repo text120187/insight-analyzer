@@ -124,7 +124,7 @@ export function ScoreDashboard({ scores }: { scores: ScoreData }) {
     <div className="space-y-4 mb-8 no-print">
       {/* ── 1. 종합 점수 카드 ── */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">종합 분析 점수</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">종합 분석 점수</p>
         <div className="flex flex-col sm:flex-row gap-6 items-center">
           <div className="shrink-0">
             <RadarChart dimensions={dimensions} />

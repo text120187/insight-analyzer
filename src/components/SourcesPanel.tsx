@@ -37,7 +37,7 @@ export function SourcesPanel({ sources }: { sources: TavilySource[] }) {
             {sources.length}건
           </span>
           <span className="text-xs text-gray-400 hidden sm:inline">
-            · AI가 분析에 활용한 실제 웹 자료입니다
+            · AI가 분석에 활용한 실제 웹 자료입니다
           </span>
         </div>
         {open
