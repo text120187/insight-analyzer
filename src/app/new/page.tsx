@@ -96,6 +96,7 @@ function NewAnalysisContent() {
   const [uxMode, setUxMode] = useState<'upload' | 'url'>('upload');
   const [uxImageList, setUxImageList] = useState<{ base64: string; preview: string; name: string }[]>([]);
   const [uxUrlList, setUxUrlList] = useState<string[]>(['']);
+  const [competitorUrlList, setCompetitorUrlList] = useState<string[]>(['']);
 
   const [form, setForm] = useState<AnalysisRequest>({
     service: '',
@@ -470,6 +471,45 @@ function NewAnalysisContent() {
                   {form.competitors && (
                     <p className="text-xs text-gray-400">분석 대상: <span className="text-gray-600">{form.competitors}</span></p>
                   )}
+
+                  {/* 경쟁사 화면 URL */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">경쟁사 화면 URL <span className="text-gray-400">(선택 · 스크린샷을 AI가 직접 분析)</span></label>
+                    <div className="space-y-2">
+                      {competitorUrlList.map((url, idx) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center">{idx + 1}</span>
+                          <input
+                            type="url"
+                            value={url}
+                            onChange={e => {
+                              const next = competitorUrlList.map((u, i) => i === idx ? e.target.value : u);
+                              setCompetitorUrlList(next);
+                              setForm(p => ({ ...p, competitorUrls: next.filter(Boolean) }));
+                            }}
+                            placeholder="https://competitor.com"
+                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCompetitorUrlList(p => [...p, ''])}
+                            className="shrink-0 w-8 h-9 flex items-center justify-center rounded-lg border border-indigo-300 text-indigo-500 hover:bg-indigo-50 transition-colors text-lg font-bold"
+                          >+</button>
+                          {competitorUrlList.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = competitorUrlList.filter((_, i) => i !== idx);
+                                setCompetitorUrlList(next);
+                                setForm(p => ({ ...p, competitorUrls: next.filter(Boolean) }));
+                              }}
+                              className="shrink-0 w-8 h-9 flex items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 transition-colors"
+                            >✕</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               );
             })()}

@@ -15,6 +15,7 @@ export interface AnalysisRequest {
   purpose: string;
   types: AnalysisType[];
   competitors?: string;
+  competitorUrls?: string[];
   reviews?: string;
   news?: string;
   selfDescription?: string;

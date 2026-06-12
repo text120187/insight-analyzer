@@ -42,9 +42,13 @@ function buildSectionPrompts(req: AnalysisRequest): string {
 
   if (req.types.includes('competitors')) {
     const competitorList = req.competitors?.trim()
-      ? `\n분석 대상 경쟁사: ${req.competitors}`
+      ? `\n분析 대상 경쟁사: ${req.competitors}`
       : '';
-    sections.push(`## 2. 🏆 경쟁사 벤치마킹${competitorList}
+    const hasCompetitorScreens = req.competitorUrls && req.competitorUrls.length > 0;
+    const screensNote = hasCompetitorScreens
+      ? `\n첨부된 ${req.competitorUrls!.length}개 경쟁사 화면 스크린샷을 참고하여 UI/UX 관점도 함께 분析하세요.`
+      : '';
+    sections.push(`## 2. 🏆 경쟁사 벤치마킹${competitorList}${screensNote}
 
 ### 경쟁사별 심층 분석
 각 경쟁사마다 아래 형식으로 분석:
@@ -349,6 +353,23 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // 경쟁사 URL → 스크린샷
+        let competitorScreenshotUrls: string[] = [];
+        if (enriched.types.includes('competitors') && enriched.competitorUrls?.length) {
+          send({ status: `경쟁사 화면 캡처 중... (${enriched.competitorUrls.length}개)` });
+          competitorScreenshotUrls = (await Promise.all(
+            enriched.competitorUrls.filter(Boolean).map(async url => {
+              try {
+                const res = await fetch(
+                  `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`
+                );
+                const json = await res.json();
+                return json?.data?.screenshot?.url as string | null ?? null;
+              } catch { return null; }
+            })
+          )).filter((u): u is string => !!u);
+        }
+
         // URL → 스크린샷 (Microlink 무료 API, 다중 URL 병렬 처리)
         let uxScreenshotUrls: string[] = [];
         if (enriched.types.includes('ux')) {
@@ -381,29 +402,32 @@ export async function POST(req: NextRequest) {
               role: 'user',
               content: (() => {
                 const textPart = { type: 'text' as const, text: buildPrompt(enriched) };
+                type ImagePart = { type: 'image_url'; image_url: { url: string; detail: 'high' } };
+                const allImageParts: ImagePart[] = [];
+
+                // 경쟁사 화면 스크린샷
+                competitorScreenshotUrls.forEach(u =>
+                  allImageParts.push({ type: 'image_url', image_url: { url: u, detail: 'high' } })
+                );
+
                 if (enriched.types.includes('ux')) {
                   // 다중 이미지 (배열)
                   if (enriched.uxImages && enriched.uxImages.length > 0) {
-                    const imageParts = enriched.uxImages.map(b64 => {
+                    enriched.uxImages.forEach(b64 => {
                       const mime = b64.startsWith('/9j') ? 'image/jpeg' : 'image/png';
-                      return { type: 'image_url' as const, image_url: { url: `data:${mime};base64,${b64}`, detail: 'high' as const } };
+                      allImageParts.push({ type: 'image_url', image_url: { url: `data:${mime};base64,${b64}`, detail: 'high' } });
                     });
-                    return [...imageParts, textPart];
-                  }
-                  // 단일 이미지 (레거시)
-                  if (enriched.uxImageBase64) {
+                  } else if (enriched.uxImageBase64) {
                     const mime = enriched.uxImageBase64.startsWith('/9j') ? 'image/jpeg' : 'image/png';
-                    return [
-                      { type: 'image_url' as const, image_url: { url: `data:${mime};base64,${enriched.uxImageBase64}`, detail: 'high' as const } },
-                      textPart,
-                    ];
-                  }
-                  // URL 스크린샷 (다중)
-                  if (uxScreenshotUrls.length > 0) {
-                    const urlParts = uxScreenshotUrls.map(u => ({ type: 'image_url' as const, image_url: { url: u, detail: 'high' as const } }));
-                    return [...urlParts, textPart];
+                    allImageParts.push({ type: 'image_url', image_url: { url: `data:${mime};base64,${enriched.uxImageBase64}`, detail: 'high' } });
+                  } else {
+                    uxScreenshotUrls.forEach(u =>
+                      allImageParts.push({ type: 'image_url', image_url: { url: u, detail: 'high' } })
+                    );
                   }
                 }
+
+                if (allImageParts.length > 0) return [...allImageParts, textPart];
                 return buildPrompt(enriched);
               })(),
             },
